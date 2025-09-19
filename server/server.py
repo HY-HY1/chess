@@ -2,6 +2,7 @@ import asyncio
 import websockets # pyright: ignore[reportMissingImports]
 import chess # pyright: ignore[reportMissingImports]
 import json
+from game import ChessGame
 
 class ChessServer:
     
@@ -9,6 +10,7 @@ class ChessServer:
         self.host = host
         self.port = port
         self.clients = set()
+        self.game = ChessGame()
         
     async def handler(self,websocket): # handles when a new client connects to the socket
         # add websockets to clients array

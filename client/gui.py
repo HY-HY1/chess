@@ -1,6 +1,10 @@
 import pygame
 import sys
 import json
+from client.client import ChessClient
+
+client = ChessClient()
+
 
 WIDTH, HEIGHT = 640, 640
 ROWS, COLS = 8, 8
@@ -9,26 +13,14 @@ LIGHT = (240, 217, 181)
 DARK = (181, 136, 99)
 BACKGROUND_COLOR = (255,255,255)
 
-
-with open("../assets/images.json") as f:
-    data = json.load(f)   # now `data` is a Python object (list/dict)
-
-PIECE_PATHS = data["pieces"]
-
-class ChessPiece:
-    def __init__(self, code, row, col):
-        """code = 'wp', 'bn', etc. row/col = board position"""
-        self.code = code
-        self.row = row
-        self.col = col
-        self.image = pygame.image.load(PIECE_PATHS[code])
-        self.image = pygame.transform.scale(self.image, (SQUARE_SIZE, SQUARE_SIZE))
-
-    def draw(self, screen):
-        x = self.col * SQUARE_SIZE
-        y = self.row * SQUARE_SIZE
-        screen.blit(self.image, (x, y))
-
+PIECE_LETTERS = { # temp letter mappings
+    "p": "P",
+    "r": "R",
+    "n": "N",
+    "b": "B",
+    "q": "Q",
+    "k": "K"
+}
 
 class ChessGUI:
     def __init__(self, width=WIDTH, height=HEIGHT):
@@ -39,6 +31,19 @@ class ChessGUI:
         pygame.display.set_caption("Chess Game")
         self.clock = pygame.time.Clock()
         self.running = True
+        self.font = pygame.font.SysFont("arial", 36, bold=True)
+        ## Testing board, link to server later
+        self.board = [
+            ["br","bn","bb","bq","bk","bb","bn","br"],
+            ["bp","bp","bp","bp","bp","bp","bp","bp"],
+            [None]*8,
+            [None]*8,
+            [None]*8,
+            [None]*8,
+            ["wp","wp","wp","wp","wp","wp","wp","wp"],
+            ["wr","wn","wb","wq","wk","wb","wn","wr"],
+        ]
+
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -49,16 +54,26 @@ class ChessGUI:
         self.screen.fill(BACKGROUND_COLOR)  # just empty white window for now
     
     def draw_board(self):
-        
         for row in range(ROWS):
             for col in range(COLS):
                 colour = LIGHT if (row + col) % 2 == 0 else DARK
                 pygame.draw.rect(self.screen, colour, (col*SQUARE_SIZE, row*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
                 
     
+
+
     def draw_pieces(self):
-        for piece in self.pieces:
-            piece.draw(self.screen)
+        for row in range(ROWS):
+            for col in range(COLS):
+                piece = self.board[row][col]
+                if piece:
+                    colour = (0,0,0) if piece[0] == "b" else (255,255,255)  # black/white text
+                    letter = PIECE_LETTERS[piece[1]]  # get symbol (p, r, n...)
+                    text = self.font.render(letter, True, colour)
+                    x = col * SQUARE_SIZE + SQUARE_SIZE//3
+                    y = row * SQUARE_SIZE + SQUARE_SIZE//4
+                    self.screen.blit(text, (x, y))
+
 
     def run(self):
         while self.running:

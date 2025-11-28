@@ -2,14 +2,23 @@ import asyncio
 import websockets # pyright: ignore[reportMissingImports]
 import json
 from game import ChessGame
-
+from utility import GameId
 
 class Server:
-    
     def __init__(self, host="localhost", port=8765):
+        self.host  = host,
+        self.port = port
+        self.size = 10
+        self.games = [None for i in range(self.size)]
+
+
+class GameServer:
+    
+    def __init__(self, gameId, host="localhost", port=8765,):
         self.host = host
         self.port = port
         self.clients = set()
+        self.gameId = gameId
         self.game = ChessGame()
         
     async def handler(self,websocket): # handles when a new client connects to the socket
@@ -77,5 +86,5 @@ class Server:
         async with websockets.serve(self.handler, self.host, self.port):
             await asyncio.Future()  # stop server immediately exiting
 
-server = Server()
+server = GameServer()
 asyncio.run(server.run())

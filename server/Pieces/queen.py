@@ -1,6 +1,7 @@
 from Pieces.base import ChessPiece
-import Pieces.bishop as Bishop
-import Pieces.rook as Rook
+from Pieces.bishop import Bishop
+from Pieces.rook import Rook
+
 
 class Queen(ChessPiece):
     def __init__(self, colour):

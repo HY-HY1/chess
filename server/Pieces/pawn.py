@@ -10,8 +10,11 @@ class Pawn(ChessPiece):
         direction = -1 if self.colour == "w" else 1 
         start_row = 6 if self.colour == "w" else 1 
 
-        if board[row+direction][col] is None:
-            moves.append((row + direction, col))
+        try:
+            if board[row+direction][col] is None:
+                moves.append((row + direction, col))
+        except IndexError:
+            print("Index Error, Ignored")
             
         if row == start_row and board[row+2 * direction][col] is None:
             moves.append((row + 2*direction, col))

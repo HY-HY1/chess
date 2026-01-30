@@ -5,7 +5,7 @@ class Pawn(ChessPiece):
     def __init__(self, colour):
         super().__init__("p", colour)
     
-    def get_legal_moves(self, board, row,col ):
+    def get_pseudo_moves(self, board, row,col ):
         moves = []
         direction = -1 if self.colour == "w" else 1 
         start_row = 6 if self.colour == "w" else 1 

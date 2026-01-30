@@ -5,7 +5,7 @@ class King(ChessPiece):
     def __init__(self, colour):
         super().__init__("k", colour)
 
-    def get_legal_moves(self, board, row, col):
+    def get_pseudo_moves(self, board, row, col):
         moves = []
         steps = [(-1,-1), (-1,0), (-1,1),
                  (0,-1),         (0,1),

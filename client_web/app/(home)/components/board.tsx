@@ -11,7 +11,6 @@ const Board = () => {
   const {
     board,
     sendMove,
-    requestBoard,
     requestLegalMoves,
     legalMoves,
   } = useGame();
@@ -57,9 +56,9 @@ const Board = () => {
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: "1rem" }}>
-        <Button variant={"default"} onClick={requestBoard}>Refresh Board</Button> 
+    <div className="w-full m-auto flex justify-center">
+      <div>
+        {/* <Button variant={"default"} onClick={requestBoard}>Refresh Board</Button>  */}
       </div>
 
       <div
@@ -84,9 +83,9 @@ const Board = () => {
                 selectedFrom[0] === rowIndex &&
                 selectedFrom[1] === colIndex;
 
-              const isLegalMove = legalMoves.some(
-                ([r, c]) => r === rowIndex && c === colIndex
-              );
+          const isLegalMove = legalMoves
+            .filter(([r, c]) => r >= 0 && r <= 7 && c >= 0 && c <= 7)
+            .some(([r, c]) => r === rowIndex && c === colIndex);
 
               return (
                 <div

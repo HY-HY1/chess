@@ -1,13 +1,11 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-} from "react";
-import useWebSocket from "@/hooks/websocket/useWebsocket";
-import { ur } from "zod/v4/locales";
+import React, { createContext, useContext, useState } from "react";
+import useWebSocket, {
+  ChatMessage,
+  MoveLogEntry,
+} from "@/hooks/websocket/useWebsocket"
+
 
 export type Tile = string | null;
 export type BoardState = Tile[][];
@@ -15,52 +13,92 @@ export type BoardState = Tile[][];
 interface GameContextValue {
   board: BoardState;
   legalMoves: [number, number][];
+  moveLog: MoveLogEntry[];
+  playerRole: "w" | "b" | "spectator" | null;
+  gameOver: { winner: string; reason: string } | null;
+
+  chatMessages: ChatMessage[];
+  chatError: string | null;
+
   sendMove: (s: [number, number], e: [number, number]) => void;
-  requestBoard: () => void;
   requestLegalMoves: (from: [number, number]) => void;
+  sendChatMessage: (message: string) => void;
+  resign: () => void;
+
   startConnection: (path: string) => void;
-  wsUrl: string | null;
-  connected: boolean;
   disconnect: () => void;
+  connected: boolean;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
 
-export function GameProvider({ children }: { children: ReactNode }) {
+export function GameProvider({ children }: { children: React.ReactNode }) {
   const [board, setBoard] = useState<BoardState>([]);
   const [legalMoves, setLegalMoves] = useState<[number, number][]>([]);
-  const [wsUrl, setWsUrl] = useState<string | null>(null);
+  const [moveLog, setMoveLog] = useState<MoveLogEntry[]>([]);
+  const [playerRole, setPlayerRole] =
+    useState<"w" | "b" | "spectator" | null>(null);
+  const [gameOver, setGameOver] =
+    useState<{ winner: string; reason: string } | null>(null);
 
-  // Give websocket callbacks ONCE
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
+
   const {
     connect,
     disconnect,
     connected,
     sendMove,
-    requestBoard,
     requestLegalMoves,
-  } = useWebSocket(setBoard, setLegalMoves);
+    sendChatMessage,
+    resign,
+  } = useWebSocket({
+    onBoardUpdate: setBoard,
+    onMoveLogUpdate: setMoveLog,
+    onLegalMovesUpdate: setLegalMoves,
+    onChatMessage: (m) => setChatMessages((p) => [...p, m]),
+    onChatHistory: setChatMessages,
+    onChatError: setChatError,
+    onRoleAssignment: setPlayerRole,
+    onGameOver: (winner, reason) => setGameOver({ winner, reason }),
+  });
 
-  // Called when user clicks "Join Game" or "Create Game"
-  function startConnection(path: string) {
-    const url = `ws://31.127.38.182:8765${path}`;
-    console.log("Starting WS at: ", url)
-    setWsUrl(url);
-    connect(url); // Connect only now (no callbacks needed)
+    function startConnection(path: string) {
+    // reset all states when joining a new game.
+    
+    setBoard([]);
+    setLegalMoves([]);
+    setMoveLog([]);
+    setPlayerRole(null);
+    setGameOver(null);
+    setChatMessages([]);
+    setChatError(null);
+
+    connect(`ws://${process.env.NEXT_PUBLIC_SERVER_ADDRESS}:8765${path}`);
   }
+
+  // Faulty function could be used in development
+  // function startConnection(path: string) {
+  //   connect(`ws://${process.env.NEXT_PUBLIC_SERVER_ADDRESS}:8765${path}`);
+  // }
 
   return (
     <GameContext.Provider
       value={{
         board,
         legalMoves,
+        moveLog,
+        playerRole,
+        gameOver,
+        chatMessages,
+        chatError,
         sendMove,
-        requestBoard,
         requestLegalMoves,
+        sendChatMessage,
         startConnection,
-        wsUrl,
+        resign,
+        disconnect,
         connected,
-        disconnect
       }}
     >
       {children}

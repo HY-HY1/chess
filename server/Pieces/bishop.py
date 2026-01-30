@@ -5,7 +5,7 @@ class Bishop(ChessPiece):
     def __init__(self, colour):
         super().__init__("b", colour)
 
-    def get_legal_moves(self, board, row, col):
+    def get_pseudo_moves(self, board, row, col):
         moves = []
         directions = [(-1,-1), (-1,1), (1,-1), (1,1)]  # diagonals
         for dr, dc in directions:

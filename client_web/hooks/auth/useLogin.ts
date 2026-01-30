@@ -14,7 +14,6 @@ interface LoginResponse {
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter()
 
   async function login(data: LoginData): Promise<LoginResponse> {
     setLoading(true);
@@ -26,6 +25,7 @@ export function useLogin() {
 
       localStorage.setItem("token", response.data.token);
       window.location.reload()
+
 
       return response.data;
     } catch  {

@@ -5,7 +5,7 @@ class Rook(ChessPiece):
     def __init__(self, colour):
         super().__init__("r", colour)
 
-    def get_legal_moves(self, board, row, col):
+    def get_pseudo_moves(self, board, row, col):
         moves = []
         directions = [(-1,0), (1,0), (0,-1), (0,1)]  # up, down, left, right
         for dr, dc in directions:

@@ -12,13 +12,13 @@ class GameServer:
         self.port = port
         self.clients = set()
 
-        # Track client roles: websocket -> "w" | "b" | "spectator"
+        # Track client roles
         self.client_roles = {}
 
         self.gameId = gameId
         self.game = ChessGame()
 
-        # Explicit player slots
+        #Player piece colout
         self.players = {
             "w": None,
             "b": None
@@ -32,7 +32,7 @@ class GameServer:
 
         self.clients.add(websocket)
 
-        # ---- Assign role ----
+        # assign roles
         if self.players["w"] is None:
             self.players["w"] = websocket
             self.client_roles[websocket] = "w"
@@ -52,7 +52,7 @@ class GameServer:
 
         print(f"[CONNECTION] Total clients: {len(self.clients)}")
 
-        # Notify client of their role
+        # send client role state
         await websocket.send(json.dumps({
             "type": "role",
             "role": self.client_roles[websocket]
@@ -69,7 +69,7 @@ class GameServer:
                 print(f"  Parsed type: {msg_type}")
                 print(f"  From role: {self.client_roles[websocket]}")
 
-                # ---- MOVE HANDLING ----
+                # handle moves
                 if msg_type == "move":
                     if self.client_roles[websocket] == "spectator":
                         print("[MOVE BLOCKED] Spectator attempted to move")
@@ -104,7 +104,7 @@ class GameServer:
                         }
                     )
 
-                # ---- BOARD UPDATE REQUEST ----
+                # handle board update requests
                 elif msg_type == "board_update":
                     print("[BOARD UPDATE REQUEST] Sending current board")
 
@@ -116,7 +116,7 @@ class GameServer:
                         }
                     )
 
-                # ---- LEGAL MOVES ----
+                # legal moves
                 elif msg_type == "legal_moves":
                     start = data["start"]
                     print("[LEGAL MOVES REQUEST]")

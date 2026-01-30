@@ -3,7 +3,6 @@ import websockets  # pyright: ignore[reportMissingImports]
 import json
 from game import ChessGame
 from utility.websocket import serialize_board, broadcast
-from messenger import Messenger
 
 ##game server.py
 class GameServer:
@@ -13,53 +12,27 @@ class GameServer:
         self.port = port
         self.clients = set()
 
-        # Track client roles: websocket -> "w" | "b" | "spectator"
+        # Track client roles
         self.client_roles = {}
 
         self.gameId = gameId
-        self.game = ChessGame(on_checkmate_callback=self.on_checkmate,
-                              on_resign_callback=self.on_resign
-                              ) # callback for game win state update
+        self.game = ChessGame()
 
-        # Explicit player slots
+        #Player piece colout
         self.players = {
             "w": None,
             "b": None
         }
-        
-        self.messenger = Messenger()
 
         print("[SERVER INIT] GameServer created")
         print("[SERVER INIT] Waiting for players...")
-        
-    async def on_checkmate(self, winner):
-        print(f"[CHECKMATE] Game over! Winner: {winner}")
-        await broadcast(
-            self.clients,
-            {
-                "type": "game_over",
-                "winner": winner,
-                "reason": "checkmate"
-            }
-        )
-    
-    async def on_resign(self, resigned_player, winner):
-        print(f"[RESIGN] Game over! Resigned_Player: {resigned_player}. Winner: {winner}")
-        await broadcast(
-            self.clients,
-            {
-                "type": "game_over",
-                "resigned_player": resigned_player,
-                "reason": "resignation"
-            }
-        )
 
     async def handler(self, websocket):
         print("\n[CONNECTION] New client attempting to connect")
 
         self.clients.add(websocket)
 
-        # ---- Assign role ----
+        # assign roles
         if self.players["w"] is None:
             self.players["w"] = websocket
             self.client_roles[websocket] = "w"
@@ -79,7 +52,7 @@ class GameServer:
 
         print(f"[CONNECTION] Total clients: {len(self.clients)}")
 
-        # Notify client of their role
+        # send client role state
         await websocket.send(json.dumps({
             "type": "role",
             "role": self.client_roles[websocket]
@@ -96,7 +69,7 @@ class GameServer:
                 print(f"  Parsed type: {msg_type}")
                 print(f"  From role: {self.client_roles[websocket]}")
 
-                # ---- MOVE HANDLING ----
+                # handle moves
                 if msg_type == "move":
                     if self.client_roles[websocket] == "spectator":
                         print("[MOVE BLOCKED] Spectator attempted to move")
@@ -112,9 +85,7 @@ class GameServer:
                     try:
                         self.game.move_piece(
                             start[0], start[1],
-                            end[0], end[1],
-                            websocket,
-                            self.players
+                            end[0], end[1]
                         )
                         print("[MOVE SUCCESS] Board updated")
 
@@ -129,12 +100,11 @@ class GameServer:
                         self.clients,
                         {
                             "type": "board_update",
-                            "board": board_state,
-                            "movelog": self.game.movelog
+                            "board": board_state
                         }
                     )
 
-                # ---- BOARD UPDATE REQUEST ----
+                # handle board update requests
                 elif msg_type == "board_update":
                     print("[BOARD UPDATE REQUEST] Sending current board")
 
@@ -146,7 +116,7 @@ class GameServer:
                         }
                     )
 
-                # ---- LEGAL MOVES ----
+                # legal moves
                 elif msg_type == "legal_moves":
                     start = data["start"]
                     print("[LEGAL MOVES REQUEST]")
@@ -162,39 +132,6 @@ class GameServer:
                             "moves": moves
                         }
                     )
-                    
-                elif msg_type == "resign":
-                    resgined, winner = self.game.resign(websocket, self.players)
-                    if not resgined:
-                        print("[GAME_SERVER] There was an issue with resignation")
-                        return
-                    await broadcast(
-                        self.clients,
-                        {
-                            "type": "resign",
-                            "message": "Player resigned"
-                        }
-                    )
-                    await self.messenger.handle_chat_message(
-                        websocket,
-                        "Server",
-                        f"Game Over Player {resgined} Resigned. {winner} Wins!",
-                        self.clients
-                    )
-
-                elif msg_type == "chat":
-                    chat_message = data.get("message", "")
-                    sender_role = self.client_roles[websocket]
-                    
-                    await self.messenger.handle_chat_message(
-                        websocket,
-                        sender_role,
-                        chat_message,
-                        self.clients
-                    )
-                    
-                elif msg_type == "chat_history":
-                    await self.messenger.get_history(websocket)
 
                 else:
                     print("[UNKNOWN MESSAGE TYPE]", msg_type)
@@ -218,4 +155,3 @@ class GameServer:
                 print("[CLEANUP] BLACK slot freed")
 
             print(f"[CLEANUP] Active clients: {len(self.clients)}")
-
